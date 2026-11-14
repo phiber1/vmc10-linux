@@ -17,7 +17,7 @@ correctly.
 | `$07` | Flash bank shown at `$E000-$FFFF`; 0 = internal BASIC ROM. From reset until the first write, bank 0 appears here, so the reset vector `$2B00` comes from the BIOS. |
 | `$0F` | Mode register: the BIOS writes `$30` on an Alice 32/90 and 0 on an MC-10; bit 4 selects the Alice timings |
 | `$1D` W | Written (`$F1`) before each flash command write |
-| `$1E` W | `$4200-$4345` → `$0200-$0345` remap **off** (sticky); used by PEEK@/POKE@ and around SAVE |
+| `$1E` W | `$4200-$4345` → `$0200-$0345` remap **off** (sticky); used by PEEK@/POKE@ and around SAVE.  While the remap is on, reads come from SRAM `$0200-$0345`, and writes go there and also through to the MC-10's internal RAM (inferred: otherwise every plain-MC-10 hi-res game would show a blank band) |
 | `$1F` W | Remap **on** (the BIOS sets it at reset; BASIC sets it again at its idle points) |
 | `$0020-$1FFF` | SRAM, 8K |
 | `$2000-$3FFF` | Flash bank 0: the BIOS. Jump table at `$2000/$2003/$2006/$2009`. |

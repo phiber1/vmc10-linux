@@ -18,6 +18,9 @@
  *   $1D  flash write enable (written before each flash command write)
  *   $1E  turn the $4200-$4345 -> $0200-$0345 remap off (sticky)
  *   $1F  turn the remap back on
+ *        Reads come from the relocated variables; writes go to them and
+ *        through to the MC-10's internal RAM (video), so ordinary hi-res
+ *        programs that draw over $4200-$4345 still display correctly.
  *        The remap covers MicroColor BASIC's old system variable area.  It
  *        must stop at $4345: MCX BASIC keeps TXTTAB at $4346 and turns the
  *        remap off around SAVE, so the program text cannot be remapped.
@@ -163,6 +166,17 @@ void mcx32sd_write(mc10 *m, uint16_t a, uint8_t v)
     if (a < 0x4000) { flash_write(m, a - 0x2000, v); return; }
     if (a < SRAM_TOP) {
         uint16_t r = remap(m, a);
+        if (r != a) {
+            /* Remapped system-variable address: the write goes to the
+             * relocated variables in SRAM *and* through to the MC-10's own
+             * RAM, so programs that draw graphics over $4200-$4345 (any
+             * hi-res game written for a plain MC-10) still see their
+             * pixels on screen, while reads keep returning the variables
+             * that the user guide says are mapped there. */
+            x->sram[r] = v;
+            mc10_base_write(m, a, v);
+            return;
+        }
         if (r >= 0x4000 && r < 0x6000) mc10_base_write(m, r, v);   /* video RAM */
         if (r >= 0x5000 || r < 0x4000) x->sram[r] = v;
         return;

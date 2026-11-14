@@ -27,6 +27,7 @@ emulator core, and runs `tests/run_tests.sh`:
 | `PROG.WAV` | Converting `PROG.C10` | WAV loading |
 | `TIMER.C10` | Hand-assembled 6803 code, then CSAVEM | Installs an output-compare interrupt handler through BASIC's `$4206` hook that increments the first screen byte |
 | `SHOW.C10` | Hand-assembled code, then CSAVEM | Stores `$13` at `$4000` and returns (LOADM/EXEC check) |
+| `FILL.C10` | Hand-assembled code, then CSAVEM | Fills video RAM `$4000-$57FF` through the CPU, selects RG6 and loops |
 | `TESTPROG.BAS` | (in the repo) | Stock MicroColor BASIC: FOR/NEXT, IF/THEN, READ/DATA, line 1000 |
 | `MCXTOKENS.BAS` | (in the repo) | MCX BASIC syntax: `&H`, ELSE, `'`, `?`, DATA with quoted commas and keyword text |
 
@@ -34,7 +35,7 @@ A full run takes about two minutes and needs no display or audio device.
 
 ### Result on the reference system
 
-With all three ROM images present: **53 passed, 0 failed, 0 skipped**
+With all three ROM images present: **54 passed, 0 failed, 0 skipped**
 (Linux Mint 22.3, gcc 13, SDL 2.30).  With only `MC10.BIN`: 18 passed, 2
 groups skipped.
 
@@ -144,6 +145,7 @@ pixels.
 | SD: KILL of a non-empty directory | Error 52 (AO) propagated to BASIC |
 | SD: NEWDIR/RENAME/KILL, missing dir | mkdir `K`, move-rename, delete, then `?NE ERROR` for a missing folder |
 | SD: AUTOEXEC | `/MCX32-SD/AUTOEXEC.BAS` runs at power-on |
+| graphics over the `$4200` remap reach video RAM | FILL.C10 run on the MCX32-SD: RG6 line 20 (address `$4280`, inside the remapped range) is fully drawn.  Guards against the "blank band in hi-res games" bug |
 | flash: WRITE MEM / KILL MEM / bank 0 protected | SST39SF010 command sequences issued by MCX BASIC's own RAM-resident code; 4K sector erase; `?FC ERROR` for bank 0 |
 | Emcee device 1: under MCX BASIC 3.1 | `LOAD "1:TESTPROG"`: the bit-level serial line and the built-in server |
 | Emcee: DIR shows subdirectories | Folders listed as `ARCADE/` |

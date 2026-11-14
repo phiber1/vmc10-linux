@@ -41,6 +41,10 @@ $H $ROM frames:100 poke:8E00,867EB74206CE8E20FF4207860897080E39 \
    poke:8E20,7C40009608DC09C31000DD0B3B "csavem:$T/TIMER.C10,TIMER,8E00,8E2C,8E00" >/dev/null 2>&1
 # SHOW.C10: machine code that stores $13 at $4000 and returns.
 $H $ROM frames:100 poke:8E00,8613B7400039 "csavem:$T/SHOW.C10,SHOW,8E00,8E05,8E00" >/dev/null 2>&1
+# FILL.C10: machine code that fills video RAM $4000-$57FF with $FF through
+# the CPU bus, selects RG6 and loops.
+#   8E00: LDX #$4000 / LDAA #$FF / STAA 0,X / INX / CPX #$5800 / BNE / LDAA #$7C / STAA $BFFF / BRA *
+$H $ROM frames:100 poke:8E00,CE400086FFA700088C580026F8867CB7BFFF20FE "csavem:$T/FILL.C10,FILL,8E00,8E13,8E00" >/dev/null 2>&1
 $H $ROM "c10wav:$T/PROG.C10,$T/PROG.WAV" >/dev/null 2>&1
 
 # ---------------------------------------------------------------- core
@@ -92,12 +96,12 @@ check "SOUND 100,5 pitch ~258 Hz (got ${hz:-?})" "$( [ "${hz:-0}" -ge 250 ] && [
 # ---------------------------------------------------------------- 8K mod
 out=$($H $ROM ram:4 8k frames:100 'type:PRINT MEM\n' until-typed frames:60 screen)
 check "internal 8K RAM mod (MEM)" "$out" " 7238"
-rowfill() {   # percent of buff pixels on screen line 191 of a PPM
+rowfill() {   # percent of buff pixels on screen line ${2:-191} of a PPM
     python3 -c "
 import sys
 d=open(sys.argv[1],'rb').read().split(b'\n',3)[3]
-y=24+191; row=d[(y*320+32)*3:(y*320+288)*3]
-print(sum(1 for i in range(0,len(row),3) if row[i:i+3]==b'\xf0\xf0\xf0')*100//256)" "$1" 2>/dev/null || echo 0
+y=24+int(sys.argv[2]); row=d[(y*320+32)*3:(y*320+288)*3]
+print(sum(1 for i in range(0,len(row),3) if row[i:i+3]==b'\xf0\xf0\xf0')*100//256)" "$1" "${2:-191}" 2>/dev/null || echo 0
 }
 $H $ROM frames:5 vdg:7C "ppm:$T/rg4.ppm" >/dev/null
 $H $ROM 8k frames:5 vdg:7C "ppm:$T/rg8.ppm" >/dev/null
@@ -189,6 +193,9 @@ print('same' if data(sys.argv[1])==data(sys.argv[2]) and data(sys.argv[1]) else 
     check "MCX32-SD flash: WRITE MEM programs a byte" "$out" "flash 0C000: 5A"
     check "MCX32-SD flash: KILL MEM erases the bank" "$out" "flash 0C000: FF"
     check "MCX32-SD flash: bank 0 (BIOS) is protected" "$out" "?FC ERROR"
+    cp "$T/FILL.C10" "$SD/FILL.C10"
+    $H $ROM $X frames:300 'type:LOADM "FILL":EXEC\n' until-typed frames:60 "ppm:$T/fill.ppm" >/dev/null
+    check "MCX32-SD: graphics written over the \$4200 remap reach video RAM" "$( [ "$(rowfill "$T/fill.ppm" 20)" -ge 99 ] && echo ok)" "ok"
     out=$($H $ROM $X serial:builtin frames:300 'type:LOAD "1:TESTPROG"\nRUN\n' until-typed frames:600 screen)
     check "Emcee device 1: under MCX BASIC 3.1" "$out" "SUM OK"
     out=$($H $ROM $X serial:builtin frames:300 'type:DIR "1:GAMES/"\n' until-typed frames:300 screen)

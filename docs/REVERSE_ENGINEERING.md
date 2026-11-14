@@ -223,6 +223,14 @@ video RAM during SAVE (remap off).  So the remap must stop at **`$4345`**,
 exactly the end of MicroColor BASIC's old system-variable area.  MCX
 BASIC's own variables end at `$0345`, which confirms it.
 
+A later bug report refined the model.  If the remap redirected writes too,
+any hi-res game written for a plain MC-10 would draw a blank band where its
+graphics cross `$4200-$4345`, since its pixels would land in the variables
+instead of video RAM.  Real MCX32-SD owners run those games, so on the
+real board remapped writes must also reach the internal RAM.  The emulator
+now models it that way: reads come from the relocated variables (as the
+guide describes), and writes go to both.
+
 ### 7.5 The flash chip: identified by watching KILL MEM
 
 The first model was an AMD 29F010 with 16K sectors.  Tracing `KILL MEM @6`
@@ -328,6 +336,7 @@ because they are instructive.
 | Serial seen as tape | MCX LLIST created a bogus `CSAVE.C10` | Port 2 bit 0 is shared by cassette, printer and serial | A recording must contain `$55 $3C` |
 | Flash sector size | KILL MEM would erase the neighbouring bank | Trace of erase commands | SST39SF010, 4K sectors |
 | Remap range | SAVE of a program wrote zeros | Trace of `$1E`/`$1F` around SAVE | Remap `$4200-$4345` only |
+| Remap swallowing graphics | On the MCX32-SD, every ordinary hi-res game showed a blank band (RG6 line demo) or missing pieces (Tetris), about an inch tall | Reported by the project owner; side-by-side stock vs MCX32-SD screenshots | Remapped writes go to the relocated variables **and** through to video RAM; reads still come from the variables |
 | Detokenizer buffer | Tiny programs SAVEd as empty `.BAS` | Emcee SAVE test | Larger output headroom |
 | Keyscan hook signature | MCX BASIC 3's routine (`JSR $02A9`) wasn't recognised; typing on the MCX32-SD silently used the slow fallback | Reviewing the hook while writing documentation | Accept `$42A9`, `$01A9` and `$02A9` |
 | Typing fallback losing keys | Quicktype dropped characters while BASIC was busy | Regression tests (LPRINT, Quicktype) | Fall back only while software reads the matrix |
