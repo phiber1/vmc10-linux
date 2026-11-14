@@ -1,0 +1,12 @@
+# ROM and firmware images are never committed (copyright); see roms/README.md
+roms/*
+!roms/README.md
+
+# build output
+/vmc10
+/build/
+
+# files the emulator writes when run from the project folder
+/LPRINT.TXT
+/screenshots/
+*.C10.tmp
