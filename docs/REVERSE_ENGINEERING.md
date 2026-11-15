@@ -217,19 +217,31 @@ variables.  But with that range, SAVE wrote a file of zeros.  Tracing the
 remap register showed MCX BASIC turns the remap **off** (`$1E` at `$C37B`)
 around SAVE.
 
-TXTTAB is `$4346`.  If `$4346-$43FF` were remapped, the start of the
-program would sit in low SRAM while typed (remap on) and be read from
-video RAM during SAVE (remap off).  So the remap must stop at **`$4345`**,
-exactly the end of MicroColor BASIC's old system-variable area.  MCX
-BASIC's own variables end at `$0345`, which confirms it.
+TXTTAB is `$4346`.  In a model where remapped writes went only to low
+SRAM, the start of the program would sit there while typed (remap on), and
+be read from video RAM during SAVE (remap off).  Narrowing the remap to
+`$4200-$4345`, the old variable area, made SAVE work, and that was the
+model for a while.
 
-A later bug report refined the model.  If the remap redirected writes too,
-any hi-res game written for a plain MC-10 would draw a blank band where its
-graphics cross `$4200-$4345`, since its pixels would land in the variables
-instead of video RAM.  Real MCX32-SD owners run those games, so on the
-real board remapped writes must also reach the internal RAM.  The emulator
-now models it that way: reads come from the relocated variables (as the
-guide describes), and writes go to both.
+A later bug report showed the real answer.  If the remap redirected writes
+too, any hi-res game written for a plain MC-10 would draw a blank band
+where its graphics cross the remapped range, since its pixels would land in
+the variables instead of video RAM.  Real MCX32-SD owners run those games,
+so on the real board remapped writes must also reach the internal RAM.
+
+With that write-through in place, the user guide's own range (PEEK@/POKE@
+"disable the hardware mapping of addresses 16896 through 17407
+(`$4200..$43FF`)") works too.  Program bytes written to `$4346-$43FF` land
+in both places, so SAVE and LIST agree whichever way the remap is set.
+Every load path (SD, Emcee, CLOAD, typing) lists back identical to the
+source.  The emulator now follows the guide:
+
+* the remap covers `$4200-$43FF`;
+* reads come from `$0200-$03FF`;
+* writes go to both copies;
+* `$1E` (PEEK@/POKE@) turns the remap off.
+
+The narrowing to `$4345` was a side effect of the incomplete write model.
 
 ### 7.5 The flash chip: identified by watching KILL MEM
 
@@ -335,7 +347,7 @@ because they are instructive.
 | CSAVE first bit | Saved images shifted by one bit | The idle-high line made the first "1" a non-edge | Time each bit from the last write of 1 |
 | Serial seen as tape | MCX LLIST created a bogus `CSAVE.C10` | Port 2 bit 0 is shared by cassette, printer and serial | A recording must contain `$55 $3C` |
 | Flash sector size | KILL MEM would erase the neighbouring bank | Trace of erase commands | SST39SF010, 4K sectors |
-| Remap range | SAVE of a program wrote zeros | Trace of `$1E`/`$1F` around SAVE | Remap `$4200-$4345` only |
+| Remap range | SAVE of a program wrote zeros | Trace of `$1E`/`$1F` around SAVE | First narrowed to `$4200-$4345`; superseded by the write-through fix below, after which the guide's `$4200-$43FF` was adopted |
 | Remap swallowing graphics | On the MCX32-SD, every ordinary hi-res game showed a blank band (RG6 line demo) or missing pieces (Tetris), about an inch tall | Reported by the project owner; side-by-side stock vs MCX32-SD screenshots | Remapped writes go to the relocated variables **and** through to video RAM; reads still come from the variables |
 | Detokenizer buffer | Tiny programs SAVEd as empty `.BAS` | Emcee SAVE test | Larger output headroom |
 | Keyscan hook signature | MCX BASIC 3's routine (`JSR $02A9`) wasn't recognised; typing on the MCX32-SD silently used the slow fallback | Reviewing the hook while writing documentation | Accept `$42A9`, `$01A9` and `$02A9` |

@@ -49,7 +49,7 @@ make
 | MCX32-SD | MCX BASIC 3.1 from flash (BIOS, bank switching, `$4200` remap, writable SST39SF010 flash), and an SD card emulated as a host folder: DIR, `DIR=`, LOAD, SAVE, RUN, MERGE, LOADM, SAVEM, OPEN/PRINT#/INPUT#, KILL, RENAME, NEWDIR, AUTOEXEC, subdirectories, ASCII BASIC tokenized and detokenized on the fly |
 | Serial / Emcee | The MC-10's bit-banged 38400 baud RS-232 port, emulated bit by bit; built-in Emcee server (LOAD, SAVE, LOADM, SAVEM, OPEN, DIR, SETDIR, LLIST printing); or a TCP link to any external server, such as pyDriveWire |
 | Tools | Quicktype (type a text file), clipboard paste, drag-and-drop loading, screenshots, full screen, terminal debugger (step, breakpoints, disassembly, memory, binary load, CSAVEM) |
-| Quality | 54 automated regression tests (headless) with self-made fixtures: see [`docs/TESTING.md`](docs/TESTING.md) |
+| Quality | 55 automated regression tests (headless) with self-made fixtures: see [`docs/TESTING.md`](docs/TESTING.md) |
 
 ## Building
 

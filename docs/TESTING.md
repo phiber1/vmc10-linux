@@ -35,7 +35,7 @@ A full run takes about two minutes and needs no display or audio device.
 
 ### Result on the reference system
 
-With all three ROM images present: **54 passed, 0 failed, 0 skipped**
+With all three ROM images present: **55 passed, 0 failed, 0 skipped**
 (Linux Mint 22.3, gcc 13, SDL 2.30).  With only `MC10.BIN`: 18 passed, 2
 groups skipped.
 
@@ -134,6 +134,7 @@ pixels.
 | SD: DIR lists folders / files | Mailbox protocol, DIR records (attribute, size, name), BIOS paging |
 | SD: RUN an ASCII .BAS | Path command `L` mode 0, default extensions, the controller's tokenizer |
 | SD: DIR= and LOAD a .C10 | Directory change (`C`), `.C10` extraction |
+| SD: program text inside the remapped page | After LOAD, the first line (stored from TXTTAB `$4346`, inside the `$4200-$43FF` remap) lists intact: checks the remap's write-through and range |
 | SD: DIR of a subdirectory | `"0:GAMES/"` lists `<DIR>` entries |
 | SD: MCX syntax via the tokenizer | ELSE, `?`, `&H` run correctly after loading from `.BAS` |
 | SD: DATA with quoted comma and keyword text | DATA is literal until `:`; quoted commas survive |

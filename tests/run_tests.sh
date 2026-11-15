@@ -151,8 +151,9 @@ if [ -f $R/mcx32sd_flash.bin ]; then
     check "SD: DIR lists files" "$out" "SHOW.C10"
     out=$($H $ROM $X frames:300 'type:RUN "TESTPROG"\n' until-typed frames:200 screen)
     check "SD: RUN an ASCII .BAS (tokenized by the controller)" "$out" "SUM OK"
-    out=$($H $ROM $X frames:300 'type:DIR="GAMES"\nLOAD "PROG"\nLIST 1000\n' until-typed frames:200 screen)
+    out=$($H $ROM $X frames:300 'type:DIR="GAMES"\nLOAD "PROG"\nCLS\nLIST\n' until-typed frames:200 screen)
     check "SD: DIR= and LOAD a .C10" "$out" '1000 PRINT "LAST LINE"'
+    check "SD: program text inside the remapped \$4200-\$43FF page lists intact" "$out" "10 REM VMC10 TEST PROGRAM"
     out=$($H $ROM $X frames:300 'type:DIR "0:GAMES/"\n' until-typed frames:120 screen)
     check "SD: DIR of a subdirectory shows <DIR> entries" "$out" "<DIR>  ARCADE"
     # the controller's tokenizer must match MCX BASIC's own

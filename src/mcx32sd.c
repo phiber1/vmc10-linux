@@ -16,15 +16,18 @@
  *   $0F  mode register (BIOS writes $30 on an Alice 32/90, 0 on an MC-10;
  *        bit 4 selects the Alice 1 MHz serial timings)
  *   $1D  flash write enable (written before each flash command write)
- *   $1E  turn the $4200-$4345 -> $0200-$0345 remap off (sticky)
+ *   $1E  turn the $4200-$43FF -> $0200-$03FF remap off (sticky)
  *   $1F  turn the remap back on
- *        Reads come from the relocated variables; writes go to them and
- *        through to the MC-10's internal RAM (video), so ordinary hi-res
- *        programs that draw over $4200-$4345 still display correctly.
- *        The remap covers MicroColor BASIC's old system variable area.  It
- *        must stop at $4345: MCX BASIC keeps TXTTAB at $4346 and turns the
- *        remap off around SAVE, so the program text cannot be remapped.
- *        (The user guide rounds this to $4200-$43FF.)
+ *        The range is the one the MCX32-SD user guide gives for PEEK@ /
+ *        POKE@ (16896-17407): two whole pages covering MicroColor BASIC's
+ *        old system variables ($4200-$4345), which MCX BASIC 3 moved down
+ *        by $4000.  Reads come from the relocated area in SRAM; writes go
+ *        there and through to the MC-10's internal RAM (video).  The
+ *        write-through keeps ordinary hi-res programs that draw over this
+ *        range on screen, and keeps the program text BASIC stores from
+ *        TXTTAB = $4346 identical in both places, so it reads back the same
+ *        whether the remap is on or off (MCX BASIC turns it off around
+ *        SAVE and LOAD).
  *
  *   $0020-$1FFF  SRAM (MCX BASIC 3 keeps its system variables at $0200)
  *   $2000-$3FFF  flash bank 0: BIOS
@@ -110,7 +113,7 @@ static uint8_t flash_read(mc10 *m, uint32_t fa)
 
 static uint16_t remap(mc10 *m, uint16_t a)
 {
-    if (m->mcx32.remap && a >= 0x4200 && a < 0x4346) return (uint16_t)(a - 0x4000);
+    if (m->mcx32.remap && a >= 0x4200 && a < 0x4400) return (uint16_t)(a - 0x4000);
     return a;
 }
 
@@ -169,7 +172,7 @@ void mcx32sd_write(mc10 *m, uint16_t a, uint8_t v)
         if (r != a) {
             /* Remapped system-variable address: the write goes to the
              * relocated variables in SRAM *and* through to the MC-10's own
-             * RAM, so programs that draw graphics over $4200-$4345 (any
+             * RAM, so programs that draw graphics over $4200-$43FF (any
              * hi-res game written for a plain MC-10) still see their
              * pixels on screen, while reads keep returning the variables
              * that the user guide says are mapped there. */
