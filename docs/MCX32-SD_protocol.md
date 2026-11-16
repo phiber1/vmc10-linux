@@ -33,6 +33,9 @@ Notes:
   when MCX BASIC turns the remap off around SAVE and LOAD.  An earlier version of this
   document said the range ended at `$4345`; that came from a write model without the
   write-through, and was wrong.
+* **The emulator's default:** VMC10 for Linux keeps this mapping disabled unless `--remap`
+  is given (or Alt-M is pressed), so BASIC can PEEK and POKE the graphics screen directly.
+  The hardware behaviour described here is what `--remap` emulates.
 * **Flash is an SST39SF010.** KILL MEM erases an 8K bank as two 4K sector erases. The command
   set is the standard `$5555/$2AAA` unlock, issued through the `$C000` window with `$06`
   selecting the bank.

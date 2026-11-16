@@ -68,7 +68,8 @@ static void ppm(const char *path)
 int main(int argc, char **argv)
 {
     if (argc < 2) { fprintf(stderr, "usage: headless ROM cmds...\n"); return 1; }
-    mc10_config cfg = { .expansion = EXP_16K, .volume = 50, .sound = true, .fast_typing = true };
+    mc10_config cfg = { .expansion = EXP_16K, .volume = 50, .sound = true, .fast_typing = true,
+                        .no_remap = true };   /* same default as the frontend */
     snprintf(cfg.printer_path, sizeof cfg.printer_path, "LPRINT.TXT");
     snprintf(cfg.tape_out_dir, sizeof cfg.tape_out_dir, ".");
     int ai = 2;
@@ -168,6 +169,7 @@ int main(int argc, char **argv)
         else if (!strncmp(a, "serial:", 7)) serial_init(&M, a + 7);
         else if (!strncmp(a, "artifact:", 9)) M.cfg.no_artifact = !atoi(a + 9);
         else if (!strncmp(a, "artphase:", 9)) M.cfg.artifact_phase = atoi(a + 9) ? 1 : 0;
+        else if (!strncmp(a, "remap:", 6)) M.cfg.no_remap = !atoi(a + 6);
         else if (!strncmp(a, "poke:", 5)) {       /* poke:ADDR,HEXBYTES */
             unsigned ad = 0; char hex[2048] = "";
             sscanf(a + 5, "%x,%2047s", &ad, hex);

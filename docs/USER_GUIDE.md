@@ -91,6 +91,7 @@ A file named on the command line is loaded according to its type:
 | `--mcx32sd` | Darren Atkinson's MCX32-SD (32K RAM, 128K flash, SD card) |
 | `--mcx32sd-flash FILE` | Seed the MCX32-SD flash working copy from FILE |
 | `--sd DIR` | Folder that acts as the MCX32-SD's SD card (default `~/mcx32sd`) |
+| `--remap` / `--no-remap` | MCX32-SD: enable / disable the board's `$4200-$43FF` mapping of BASIC's old variable addresses (default: disabled, Alt-M toggles; see section 15) |
 | `--emcee [DIR]` | Built-in Emcee file server on the serial port.  DIR defaults to the SD folder, or `~/emcee`.  It is only taken as the folder if it exists. |
 | `--serial HOST:PORT` | Connect the serial port to an external TCP server instead (e.g. pyDriveWire) |
 | `--scale N` | Window scale 1-6 (default 3, i.e. 960x720) |
@@ -141,11 +142,13 @@ override it.
 | `fast_typing` | `0` / `1` | Deliver typed text through the ROM's keyscan routine (default 1) |
 | `artifact` | `0` / `1` | NTSC artifact colours in RG6/CSS=1 (default 1) |
 | `artifact_phase` | `0` / `1` | Artifact colour phase (saved when changed with Alt-A) |
+| `remap` | `0` / `1` | MCX32-SD `$4200` variable mapping (default 0; saved when changed with Alt-M) |
 | `lowercase_inverse` | `0` / `1` | Quicktype keeps lower case (shown as inverse video) instead of upper-casing it |
 | `color.NAME` | `R,G,B` or `#RRGGBB` | Palette.  NAME is one of `green yellow blue red buff cyan magenta orange black darkgreen darkorange artifactblue artifactorange`.  Each line overrides one colour. |
 
 **Only settings changed with hotkeys are saved back** (window size with
-F10, sound with F6, keyboard mode with F5, artifact phase with Alt-A).  Command-line options are never
+F10, sound with F6, keyboard mode with F5, artifact phase with Alt-A, MCX32-SD
+mapping with Alt-M).  Command-line options are never
 written to the file, and other lines in it are preserved.
 
 The default palette is the one from the original VMC10:
@@ -529,6 +532,26 @@ or `.WAV`) runs at power-on.  Hold BREAK to skip it.
 
 **Bypass:** holding CONTROL at power-on boots plain MicroColor BASIC
 without MCX BASIC.
+
+**The `$4200` variable mapping (Alt-M, `--remap`):**
+
+* **What the real board does:** MicroColor BASIC kept its system variables
+  at `$4200-$4345`, inside the area a 6K graphics screen needs.  MCX BASIC 3
+  moves them down by `$4000`, and the real MCX32-SD maps `$4200-$43FF` onto
+  the new location, so old programs that PEEK or POKE the original
+  addresses keep working.  The side effect: plain PEEK and POKE can't reach
+  that part of the graphics screen.  On a real board you need `PEEK@` and
+  `POKE@`, and `POKE 30,0` (register `$1E`) only switches the mapping off
+  until BASIC next waits for input.
+* **The emulator's default:** the mapping is **disabled**.  The area is
+  plain memory, so BASIC's PEEK and POKE (and machine code) reach the whole
+  graphics screen directly.  MCX BASIC itself never uses the old addresses,
+  so nothing in BASIC depends on it.
+* **To get the real board's behaviour,** use `--remap` (setting
+  `remap = 1`) or toggle it with **Alt-M**.  Old BASIC programs that POKE
+  MicroColor BASIC's variable addresses need it.  When it's on, writes go
+  to both the relocated variables and the screen, as on the real board, so
+  graphics still display.
 
 **Graphics:** MCX BASIC 3 offers PMODE 0-4.  Modes 3 and 4 (CG6/RG6) need
 the internal RAM upgrade to show the whole screen: use `--8k`.

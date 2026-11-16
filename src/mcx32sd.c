@@ -28,6 +28,10 @@
  *        TXTTAB = $4346 identical in both places, so it reads back the same
  *        whether the remap is on or off (MCX BASIC turns it off around
  *        SAVE and LOAD).
+ *        The emulator's --no-remap / Alt-M option (cfg.no_remap) keeps the
+ *        mapping off whatever is written to $1E/$1F, so BASIC can PEEK and
+ *        POKE the graphics screen directly.  MCX BASIC itself never uses
+ *        the old addresses, so only programs that POKE them are affected.
  *
  *   $0020-$1FFF  SRAM (MCX BASIC 3 keeps its system variables at $0200)
  *   $2000-$3FFF  flash bank 0: BIOS
@@ -113,7 +117,7 @@ static uint8_t flash_read(mc10 *m, uint32_t fa)
 
 static uint16_t remap(mc10 *m, uint16_t a)
 {
-    if (m->mcx32.remap && a >= 0x4200 && a < 0x4400) return (uint16_t)(a - 0x4000);
+    if (m->mcx32.remap && !m->cfg.no_remap && a >= 0x4200 && a < 0x4400) return (uint16_t)(a - 0x4000);
     return a;
 }
 

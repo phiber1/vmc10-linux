@@ -145,6 +145,8 @@ typedef struct {
     uint32_t palette[C_NUMCOLORS];
     bool     no_artifact;       /* show RG6/CSS=1 as raw 256x192 (no NTSC artifact colours) */
     int      artifact_phase;    /* 0: pair 10 = orange, 01 = blue; 1: swapped */
+    bool     no_remap;          /* MCX32-SD: keep the $4200-$43FF variable mapping off
+                                   (the frontend's default; --remap enables it) */
 } mc10_config;
 
 typedef struct mc10 {

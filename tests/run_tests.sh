@@ -167,7 +167,7 @@ if [ -f $R/mcx32sd_flash.bin ]; then
     check "SD: DIR lists files" "$out" "SHOW.C10"
     out=$($H $ROM $X frames:300 'type:RUN "TESTPROG"\n' until-typed frames:200 screen)
     check "SD: RUN an ASCII .BAS (tokenized by the controller)" "$out" "SUM OK"
-    out=$($H $ROM $X frames:300 'type:DIR="GAMES"\nLOAD "PROG"\nCLS\nLIST\n' until-typed frames:200 screen)
+    out=$($H $ROM $X remap:1 frames:300 'type:DIR="GAMES"\nLOAD "PROG"\nCLS\nLIST\n' until-typed frames:200 screen)
     check "SD: DIR= and LOAD a .C10" "$out" '1000 PRINT "LAST LINE"'
     check "SD: program text inside the remapped \$4200-\$43FF page lists intact" "$out" "10 REM VMC10 TEST PROGRAM"
     out=$($H $ROM $X frames:300 'type:DIR "0:GAMES/"\n' until-typed frames:120 screen)
@@ -211,8 +211,14 @@ print('same' if data(sys.argv[1])==data(sys.argv[2]) and data(sys.argv[1]) else 
     check "MCX32-SD flash: KILL MEM erases the bank" "$out" "flash 0C000: FF"
     check "MCX32-SD flash: bank 0 (BIOS) is protected" "$out" "?FC ERROR"
     cp "$T/FILL.C10" "$SD/FILL.C10"
-    $H $ROM $X frames:300 'type:LOADM "FILL":EXEC\n' until-typed frames:60 "ppm:$T/fill.ppm" >/dev/null
+    $H $ROM $X remap:1 frames:300 'type:LOADM "FILL":EXEC\n' until-typed frames:60 "ppm:$T/fill.ppm" >/dev/null
     check "MCX32-SD: graphics written over the \$4200 remap reach video RAM" "$( [ "$(rowfill "$T/fill.ppm" 20)" -ge 99 ] && echo ok)" "ok"
+    out=$($H $ROM $X remap:1 frames:300 'type:PRINT "R";PEEK(16976)\n' until-typed frames:30 screen)
+    check "MCX32-SD: --remap: PEEK sees the relocated variable" "$out" "R 175"
+    out=$($H $ROM $X frames:300 'type:POKE 16976,99:PRINT "R";PEEK(16976);PEEK@(16976)\nLIST\n' until-typed frames:30 screen)
+    check "MCX32-SD default (no mapping): PEEK/POKE reach the screen RAM directly" "$out" "R 99  99"
+    out=$($H $ROM $X frames:300 'type:LOAD "TESTPROG"\nRUN\n' until-typed frames:200 screen)
+    check "MCX32-SD default (no mapping): BASIC LOAD and RUN work" "$out" "SUM OK"
     out=$($H $ROM $X serial:builtin frames:300 'type:LOAD "1:TESTPROG"\nRUN\n' until-typed frames:600 screen)
     check "Emcee device 1: under MCX BASIC 3.1" "$out" "SUM OK"
     out=$($H $ROM $X serial:builtin frames:300 'type:DIR "1:GAMES/"\n' until-typed frames:300 screen)

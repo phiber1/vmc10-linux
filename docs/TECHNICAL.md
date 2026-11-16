@@ -563,7 +563,7 @@ brief:
 | `$06` / `$07` | Flash bank at `$C000` / `$E000` (`$07` = 0: internal ROM; bank 0 is shown at `$E000` from reset until the first write to `$07`) |
 | `$0F` | Mode (`$30` on Alice 32/90, 0 on MC-10) |
 | `$1D` | Flash write enable |
-| `$1E` / `$1F` | `$4200-$43FF` → `$0200-$03FF` remap off / on (the range the MCX32-SD user guide gives for PEEK@/POKE@).  While on, reads come from the relocated variables in SRAM; writes go to SRAM **and** through to the MC-10's video RAM, so ordinary hi-res programs that draw over that range still display correctly |
+| `$1E` / `$1F` | `$4200-$43FF` → `$0200-$03FF` remap off / on (the range the MCX32-SD user guide gives for PEEK@/POKE@).  The emulator disables the remap by default (`--remap` / Alt-M enables it), so the area is plain memory.  While on, reads come from the relocated variables in SRAM; writes go to SRAM **and** through to the MC-10's video RAM, so ordinary hi-res programs that draw over that range still display correctly |
 | `$0020-$1FFF`, `$5000-$AFFF` | SRAM (8K + 24K = 32K); `$4000-$4FFF` is the MC-10's RAM |
 | `$2000-$3FFF` | Flash bank 0 (BIOS, jump table `$2000`) |
 

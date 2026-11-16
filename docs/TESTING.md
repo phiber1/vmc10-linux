@@ -35,7 +35,7 @@ A full run takes about two minutes and needs no display or audio device.
 
 ### Result on the reference system
 
-With all three ROM images present: **58 passed, 0 failed, 0 skipped**
+With all three ROM images present: **61 passed, 0 failed, 0 skipped**
 (Linux Mint 22.3, gcc 13, SDL 2.30).  With only `MC10.BIN`: 21 passed, 2
 groups skipped.
 
@@ -137,7 +137,7 @@ pixels.
 | SD: DIR lists folders / files | Mailbox protocol, DIR records (attribute, size, name), BIOS paging |
 | SD: RUN an ASCII .BAS | Path command `L` mode 0, default extensions, the controller's tokenizer |
 | SD: DIR= and LOAD a .C10 | Directory change (`C`), `.C10` extraction |
-| SD: program text inside the remapped page | After LOAD, the first line (stored from TXTTAB `$4346`, inside the `$4200-$43FF` remap) lists intact: checks the remap's write-through and range |
+| SD: program text inside the remapped page | With `--remap`: after LOAD, the first line (stored from TXTTAB `$4346`, inside the `$4200-$43FF` remap) lists intact: checks the remap's write-through and range |
 | SD: DIR of a subdirectory | `"0:GAMES/"` lists `<DIR>` entries |
 | SD: MCX syntax via the tokenizer | ELSE, `?`, `&H` run correctly after loading from `.BAS` |
 | SD: DATA with quoted comma and keyword text | DATA is literal until `:`; quoted commas survive |
@@ -149,7 +149,10 @@ pixels.
 | SD: KILL of a non-empty directory | Error 52 (AO) propagated to BASIC |
 | SD: NEWDIR/RENAME/KILL, missing dir | mkdir `K`, move-rename, delete, then `?NE ERROR` for a missing folder |
 | SD: AUTOEXEC | `/MCX32-SD/AUTOEXEC.BAS` runs at power-on |
-| graphics over the `$4200` remap reach video RAM | FILL.C10 run on the MCX32-SD: RG6 line 20 (address `$4280`, inside the remapped range) is fully drawn.  Guards against the "blank band in hi-res games" bug |
+| graphics over the `$4200` remap reach video RAM | With `--remap`: FILL.C10 run on the MCX32-SD: RG6 line 20 (address `$4280`, inside the remapped range) is fully drawn.  Guards against the "blank band in hi-res games" bug |
+| `--remap`: PEEK sees the relocated variable | With the mapping enabled, `PEEK(16976)` returns MCX BASIC's top-of-RAM byte from `$0250` (175) |
+| default (no mapping): PEEK/POKE reach screen RAM | `POKE 16976,99` is read back as 99 by both `PEEK` and `PEEK@` |
+| default (no mapping): LOAD and RUN work | MCX BASIC needs no mapping |
 | flash: WRITE MEM / KILL MEM / bank 0 protected | SST39SF010 command sequences issued by MCX BASIC's own RAM-resident code; 4K sector erase; `?FC ERROR` for bank 0 |
 | Emcee device 1: under MCX BASIC 3.1 | `LOAD "1:TESTPROG"`: the bit-level serial line and the built-in server |
 | Emcee: DIR shows subdirectories | Folders listed as `ARCADE/` |
