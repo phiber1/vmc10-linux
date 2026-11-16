@@ -84,6 +84,8 @@ A file named on the command line is loaded according to its type:
 | `--ram 4\|20` | Without / with the Tandy 16K RAM pack (default 20) |
 | `--8k` | Internal 8K RAM mod: `$4000-$5FFF` on board; the VDG sees 8K, so CG6/RG6 fill the screen |
 | `--4k` | Stock 4K internal RAM (default) |
+| `--no-artifact` | Show RG6 with CSS=1 as raw 256x192 white on black, without NTSC artifact colours (artifacting is on by default) |
+| `--artifact-phase 0\|1` | Artifact colour phase: 0 = pixel pairs `10` orange and `01` blue, 1 = swapped (Alt-A toggles) |
 | `--mcx128` | Darren Atkinson's MCX-128 (128K RAM + MCX BASIC EPROM) |
 | `--mcx128-rom FILE` | MCX-128 EPROM image (default `roms/mcx128bas.rom`) |
 | `--mcx32sd` | Darren Atkinson's MCX32-SD (32K RAM, 128K flash, SD card) |
@@ -137,11 +139,13 @@ override it.
 | `printer` | path | Printer file |
 | `tapedir` | path | CSAVE folder |
 | `fast_typing` | `0` / `1` | Deliver typed text through the ROM's keyscan routine (default 1) |
+| `artifact` | `0` / `1` | NTSC artifact colours in RG6/CSS=1 (default 1) |
+| `artifact_phase` | `0` / `1` | Artifact colour phase (saved when changed with Alt-A) |
 | `lowercase_inverse` | `0` / `1` | Quicktype keeps lower case (shown as inverse video) instead of upper-casing it |
-| `color.NAME` | `R,G,B` or `#RRGGBB` | Palette.  NAME is one of `green yellow blue red buff cyan magenta orange black darkgreen darkorange` |
+| `color.NAME` | `R,G,B` or `#RRGGBB` | Palette.  NAME is one of `green yellow blue red buff cyan magenta orange black darkgreen darkorange artifactblue artifactorange`.  Each line overrides one colour. |
 
 **Only settings changed with hotkeys are saved back** (window size with
-F10, sound with F6, keyboard mode with F5).  Command-line options are never
+F10, sound with F6, keyboard mode with F5, artifact phase with Alt-A).  Command-line options are never
 written to the file, and other lines in it are preserved.
 
 The default palette is the one from the original VMC10:
@@ -159,6 +163,8 @@ The default palette is the one from the original VMC10:
 | black | 16, 16, 16 |
 | darkgreen | 16, 96, 16 |
 | darkorange | 128, 48, 16 |
+| artifactblue | 48, 120, 216 |
+| artifactorange | 216, 136, 80 |
 
 ## 5. The window
 
@@ -178,6 +184,32 @@ read it shows `TAPE name nn%`.  While text is being typed it shows
 `screenshots/vmc10_NNNN.bmp` in the current folder.
 
 **F1** overlays a key summary on the screen.
+
+**Artifact colours.**  The MC-10 was meant for a composite TV.  In RG6
+(256x192) with the buff colour set (CSS=1, e.g. `POKE 49151,124`), a TV
+can't resolve single pixels: the 6847's pixel clock interacts with the
+colour subcarrier, so each **pair** of pixels shows as one colour and the
+picture is effectively 128x192 in four colours.  Many games and pictures
+depend on this.
+
+| Pixel pair | Shown as |
+|---|---|
+| `00` | black |
+| `11` | white (buff) |
+| `10` | orange (phase 0) / blue (phase 1) |
+| `01` | blue (phase 0) / orange (phase 1) |
+
+* **Which pair gets which colour** depends on the clock phase the VDG
+  happens to lock onto at reset, so real machines vary from power-on to
+  power-on.  Press **Alt-A** to swap the colours if a game looks wrong, or
+  set `--artifact-phase` / `artifact_phase`.
+* **The colours themselves** depend on the TV.  The defaults are a muted
+  orange and a cyan leaning towards blue.  Tune them with
+  `color.artifactorange` and `color.artifactblue`.
+* **Monitor look:** `--no-artifact` (setting `artifact = 0`) shows the raw
+  256x192 white-on-black picture, as an RGB-style monitor would.
+* **Other modes** (including RG6 with the green colour set) are shown
+  unchanged.
 
 ## 6. Keyboard
 

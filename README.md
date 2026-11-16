@@ -39,7 +39,7 @@ make
 | Area | What's emulated |
 |---|---|
 | CPU | Motorola MC6803: full documented 6801/6803 instruction set with the 6803 cycle table; on-chip ports; 16-bit free-running timer with output compare and overflow interrupts; the external-bus register holes at `$04-$07`, `$0F` and `$15-$1F` that expansion hardware uses |
-| Video | MC6847 VDG rendered per scan line: alphanumerics (internal and external character sets), semigraphics 4 and 6, all eight graphics modes (CG1-CG6, RG1-RG6), CSS colour sets, border colours; the original VMC10 palette; 4K video wrap on a stock machine |
+| Video | MC6847 VDG rendered per scan line: alphanumerics (internal and external character sets), semigraphics 4 and 6, all eight graphics modes (CG1-CG6, RG1-RG6), CSS colour sets, border colours; **NTSC artifact colours** in RG6 (orange/blue, selectable phase); the original VMC10 palette; 4K video wrap on a stock machine |
 | Memory | 4K or 20K (Tandy 16K pack); internal 8K mod (Kitsz/Snider) for full-screen 256x192; MCX-128 (128K banked RAM + EPROM, from its GAL22v10 equations); MCX32-SD (32K SRAM + 128K flash) |
 | Keyboard | Full MC-10 matrix (including CONTROL, BREAK, SHIFT); positional "emulated" mode for games, character-based "sensible" mode for typing; arrows = W/A/S/Z; gamepad support |
 | Sound | 1-bit speaker sampled cycle-exactly at 44.1 kHz with a gentle low-pass filter |
@@ -49,7 +49,7 @@ make
 | MCX32-SD | MCX BASIC 3.1 from flash (BIOS, bank switching, `$4200` remap, writable SST39SF010 flash), and an SD card emulated as a host folder: DIR, `DIR=`, LOAD, SAVE, RUN, MERGE, LOADM, SAVEM, OPEN/PRINT#/INPUT#, KILL, RENAME, NEWDIR, AUTOEXEC, subdirectories, ASCII BASIC tokenized and detokenized on the fly |
 | Serial / Emcee | The MC-10's bit-banged 38400 baud RS-232 port, emulated bit by bit; built-in Emcee server (LOAD, SAVE, LOADM, SAVEM, OPEN, DIR, SETDIR, LLIST printing); or a TCP link to any external server, such as pyDriveWire |
 | Tools | Quicktype (type a text file), clipboard paste, drag-and-drop loading, screenshots, full screen, terminal debugger (step, breakpoints, disassembly, memory, binary load, CSAVEM) |
-| Quality | 55 automated regression tests (headless) with self-made fixtures: see [`docs/TESTING.md`](docs/TESTING.md) |
+| Quality | 58 automated regression tests (headless) with self-made fixtures: see [`docs/TESTING.md`](docs/TESTING.md) |
 
 ## Building
 
@@ -94,6 +94,7 @@ Drag and drop always works without them.
 | Esc | BREAK |
 | Ctrl | CONTROL |
 | Arrows | W A S Z |
+| Alt-A | Swap the RG6 artifact colours (orange / blue) |
 | Alt-Q | Quit |
 
 ### Common configurations

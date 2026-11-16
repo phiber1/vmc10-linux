@@ -166,6 +166,8 @@ int main(int argc, char **argv)
             M.break_hit = false; M.bp_skip = true;
         }
         else if (!strncmp(a, "serial:", 7)) serial_init(&M, a + 7);
+        else if (!strncmp(a, "artifact:", 9)) M.cfg.no_artifact = !atoi(a + 9);
+        else if (!strncmp(a, "artphase:", 9)) M.cfg.artifact_phase = atoi(a + 9) ? 1 : 0;
         else if (!strncmp(a, "poke:", 5)) {       /* poke:ADDR,HEXBYTES */
             unsigned ad = 0; char hex[2048] = "";
             sscanf(a + 5, "%x,%2047s", &ad, hex);

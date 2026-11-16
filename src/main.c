@@ -42,7 +42,7 @@ static bool warp, show_help, running = true;
 static uint32_t osd_until;
 static char exe_dir[PATH_MAX];
 static SDL_GameController *pad;
-static bool dirty[4];           /* settings changed via hotkeys: scale, volume, sound, keyboard */
+static bool dirty[5];           /* settings changed via hotkeys: scale, volume, sound, keyboard, artifact_phase */
 
 static void trim(char *s)
 {
@@ -66,7 +66,7 @@ static bool parse_rgb(const char *v, uint32_t *out)
 
 static const char *color_names[C_NUMCOLORS] = {
     "green", "yellow", "blue", "red", "buff", "cyan", "magenta", "orange",
-    "black", "darkgreen", "darkorange"
+    "black", "darkgreen", "darkorange", "artifactblue", "artifactorange"
 };
 
 static void apply_setting(mc10_config *cfg, const char *k, const char *v)
@@ -95,6 +95,8 @@ static void apply_setting(mc10_config *cfg, const char *k, const char *v)
     else if (!strcmp(k, "printer")) snprintf(cfg->printer_path, sizeof cfg->printer_path, "%s", v);
     else if (!strcmp(k, "tapedir")) snprintf(cfg->tape_out_dir, sizeof cfg->tape_out_dir, "%s", v);
     else if (!strcmp(k, "fast_typing")) cfg->fast_typing = atoi(v);
+    else if (!strcmp(k, "artifact")) cfg->no_artifact = !atoi(v);
+    else if (!strcmp(k, "artifact_phase")) cfg->artifact_phase = atoi(v) ? 1 : 0;
     else if (!strcmp(k, "lowercase_inverse")) cfg->lower_as_inverse = atoi(v);
     else if (!strncmp(k, "color.", 6)) {
         for (int i = 0; i < C_NUMCOLORS; i++)
@@ -122,22 +124,23 @@ static void load_config(mc10_config *cfg)
 /* Persist settings the user toggles from the keyboard. */
 static void save_config(void)
 {
-    const char *keys[] = { "scale", "volume", "sound", "keyboard" };
-    char vals[4][32];
+    const char *keys[] = { "scale", "volume", "sound", "keyboard", "artifact_phase" };
+    char vals[5][32];
     snprintf(vals[0], 32, "%d", S.scale);
     snprintf(vals[1], 32, "%d", M.cfg.volume);
     snprintf(vals[2], 32, "%d", M.cfg.sound);
     snprintf(vals[3], 32, "%s", S.sensible ? "sensible" : "emulated");
+    snprintf(vals[4], 32, "%d", M.cfg.artifact_phase);
 
     char *out = NULL;
     size_t outlen = 0;
     FILE *mem = open_memstream(&out, &outlen);
     if (!mem) return;
     bool any = false;
-    for (int i = 0; i < 4; i++) any |= dirty[i];
+    for (int i = 0; i < 5; i++) any |= dirty[i];
     if (!any) { fclose(mem); free(out); return; }
-    bool done[4] = { 0 };
-    for (int i = 0; i < 4; i++) done[i] = !dirty[i];
+    bool done[5] = { 0 };
+    for (int i = 0; i < 5; i++) done[i] = !dirty[i];
     FILE *f = fopen(S.config_path, "r");
     if (f) {
         char line[PATH_MAX + 64];
@@ -145,7 +148,7 @@ static void save_config(void)
             char key[64] = "";
             sscanf(line, " %63[^= \t]", key);
             int hit = -1;
-            for (int i = 0; i < 4; i++) if (!strcmp(key, keys[i]) && strchr(line, '=')) hit = i;
+            for (int i = 0; i < 5; i++) if (!strcmp(key, keys[i]) && strchr(line, '=')) hit = i;
             if (hit >= 0 && dirty[hit]) { fprintf(mem, "%s = %s\n", keys[hit], vals[hit]); done[hit] = true; }
             else fputs(line, mem);
         }
@@ -153,7 +156,7 @@ static void save_config(void)
     } else {
         fputs("# VMC10 for Linux settings.  See README.md for all keys.\n", mem);
     }
-    for (int i = 0; i < 4; i++) if (!done[i]) fprintf(mem, "%s = %s\n", keys[i], vals[i]);
+    for (int i = 0; i < 5; i++) if (!done[i]) fprintf(mem, "%s = %s\n", keys[i], vals[i]);
     fclose(mem);
 
     char dir[PATH_MAX];
@@ -236,6 +239,7 @@ static const char *help_lines[] = {
     "F10 WINDOW SIZE",
     "F11 SCREENSHOT   F12 FULL SCREEN",
     "ESC BREAK   CTRL CONTROL",
+    "ALT-A SWAP ARTIFACT COLOURS",
     "ARROWS = W A S Z (GAMES)",
     "DROP FILES ON WINDOW TO LOAD",
     NULL
@@ -518,6 +522,15 @@ static void handle_events(void)
                 break;
             }
             if (k == SDLK_q && (e.key.keysym.mod & KMOD_ALT)) { running = false; break; }
+            if (k == SDLK_a && (e.key.keysym.mod & KMOD_ALT)) {
+                if (down && !e.key.repeat) {
+                    M.cfg.artifact_phase ^= 1;
+                    dirty[4] = true;
+                    mc10_status(&M, "ARTIFACT: 10=%s 01=%s", M.cfg.artifact_phase ? "BLUE" : "ORANGE",
+                                M.cfg.artifact_phase ? "ORANGE" : "BLUE");
+                }
+                break;
+            }
             if (e.key.repeat) break;
             if (!S.sensible || sensible_direct(sc)) {
                 int key = scancode_to_key(sc);
@@ -595,6 +608,9 @@ static void usage(const char *prog)
            "  --ram 4|20         without / with the Tandy 16K RAM expansion (default 20)\n"
            "  --8k               internal 8K RAM mod: full-screen 256x192 graphics\n"
            "  --4k               stock 4K internal RAM (default)\n"
+           "  --no-artifact      show RG6 with CSS=1 as raw 256x192 white on black,\n"
+           "                     without NTSC artifact colours (default: artifacting on)\n"
+           "  --artifact-phase N 0: pixel pairs 10 = orange, 01 = blue; 1: swapped (Alt-A)\n"
            "  --mcx128           MCX-128 expansion (128K RAM + MCX BASIC, roms/mcx128bas.rom)\n"
            "  --mcx128-rom FILE  MCX-128 EPROM image (16K)\n"
            "  --mcx32sd          MCX32-SD expansion (32K RAM, flash MCX BASIC 3, SD card)\n"
@@ -630,6 +646,7 @@ int main(int argc, char **argv)
     else snprintf(exe_dir, sizeof exe_dir, ".");
 
     mc10_config cfg = { .expansion = EXP_16K, .volume = 50, .sound = true, .fast_typing = true };
+    mc10_default_palette(cfg.palette);      /* the settings file overrides single colours */
     snprintf(cfg.printer_path, sizeof cfg.printer_path, "LPRINT.TXT");
     snprintf(cfg.tape_out_dir, sizeof cfg.tape_out_dir, ".");
     S.scale = 3;
@@ -680,6 +697,8 @@ int main(int argc, char **argv)
         else if (ARG("--volume")) cfg.volume = atoi(v);
         else if (!strcmp(a, "--alice")) alice = true;
         else if (!strcmp(a, "--8k")) cfg.internal8k = true;
+        else if (!strcmp(a, "--no-artifact")) cfg.no_artifact = true;
+        else if (ARG("--artifact-phase")) cfg.artifact_phase = atoi(v) ? 1 : 0;
         else if (!strcmp(a, "--4k")) cfg.internal8k = false;
         else if (!strcmp(a, "--fullscreen")) S.fullscreen = true;
         else if (!strcmp(a, "--sensible")) S.sensible = true;

@@ -108,6 +108,22 @@ $H $ROM 8k frames:5 vdg:7C "ppm:$T/rg8.ppm" >/dev/null
 check "RG6 repeats the top of the screen with stock 4K" "$( [ "$(rowfill "$T/rg4.ppm")" -lt 50 ] && echo ok)" "ok"
 check "RG6 full 256x192 screen with the 8K mod" "$( [ "$(rowfill "$T/rg8.ppm")" -ge 99 ] && echo ok)" "ok"
 
+# NTSC artifact colours in RG6/CSS=1: the test pattern's band at lines
+# 128-135 is all $AA, i.e. pixel pairs "10"
+artpx() {   # colour of screen pixel (x,y) of a PPM
+    python3 -c "
+import sys
+d=open(sys.argv[1],'rb').read().split(b'\n',3)[3]
+x,y=int(sys.argv[2]),int(sys.argv[3])
+print(d[((24+y)*320+32+x)*3:((24+y)*320+33+x)*3].hex())" "$1" "$2" "$3" 2>/dev/null
+}
+$H $ROM 8k frames:5 vdg:7C "ppm:$T/art0.ppm" >/dev/null
+$H $ROM 8k artphase:1 frames:5 vdg:7C "ppm:$T/art1.ppm" >/dev/null
+$H $ROM 8k artifact:0 frames:5 vdg:7C "ppm:$T/art2.ppm" >/dev/null
+check "RG6/CSS=1 artifact colours: pairs 10 = orange (phase 0)" "$(artpx "$T/art0.ppm" 0 130)$(artpx "$T/art0.ppm" 1 130)" "d88850d88850"
+check "RG6/CSS=1 artifact colours: pairs 10 = blue (phase 1)" "$(artpx "$T/art1.ppm" 0 130)$(artpx "$T/art1.ppm" 1 130)" "3078d83078d8"
+check "RG6/CSS=1 without artifacting: raw buff/black pixels" "$(artpx "$T/art2.ppm" 0 130)$(artpx "$T/art2.ppm" 1 130)" "f0f0f0101010"
+
 # ---------------------------------------------------------------- MCX-128
 if [ -f $R/mcx128bas.rom ]; then
     MCX="mcx128:$R/mcx128bas.rom"

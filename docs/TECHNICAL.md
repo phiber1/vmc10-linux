@@ -328,6 +328,23 @@ Colours:
 | RG | 0 | black / green | green |
 | RG | 1 | black / buff | buff |
 
+**NTSC artifact colours (RG6, CSS=1).**  Unless `--no-artifact` is
+given, an RG6 line with CSS=1 is drawn as 128 two-pixel cells:
+
+| Pair | Colour |
+|---|---|
+| `00` | black |
+| `11` | buff |
+| `10` | `artifactorange` (phase 0) or `artifactblue` (phase 1) |
+| `01` | the other one |
+
+On real hardware, the pairing comes from the phase relationship between
+the VDG's pixel clock and the 3.58 MHz colour subcarrier, which is set
+when the VDG starts after reset.  Hence the selectable phase (Alt-A).  The
+default colours, a muted orange (216, 136, 80) and a blue-leaning cyan
+(48, 120, 216), approximate a typical composite TV and can be set in the
+palette.  RG6 with CSS=0 and all other modes are drawn without artifacts.
+
 Each source row is repeated 192 / rows times.  Addresses are
 `$4000 + (offset & mask)`, so on a stock 4K MC-10 the bottom third of a 6K
 screen repeats bytes `$000-$7FF`, as on real hardware.

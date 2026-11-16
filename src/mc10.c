@@ -202,7 +202,14 @@ static const uint32_t default_palette[C_NUMCOLORS] = {
     0x101010, /* black */
     0x106010, /* dark green  16, 96, 16 */
     0x803010, /* dark orange 128,48, 16 */
+    0x3078D8, /* artifact blue    48,120,216: composite "cyan", leaning blue */
+    0xD88850, /* artifact orange 216,136, 80: composite orange, washed out */
 };
+
+void mc10_default_palette(uint32_t pal[C_NUMCOLORS])
+{
+    memcpy(pal, default_palette, sizeof default_palette);
+}
 
 bool mc10_init(mc10 *m, const mc10_config *cfg)
 {
@@ -472,6 +479,31 @@ static void render_line(mc10 *m, int line)
     int ppb = 8 / bpp;                       /* pixels per byte */
     int w = 256 / (bpr * ppb);               /* screen pixels per pixel */
     int x = 0;
+    if (mode == 7 && css && !m->cfg.no_artifact) {
+        /* NTSC artifact colours: on a composite monitor, RG6 with CSS=1
+         * is seen as 128x192 in four colours.  Each pair of pixels is one
+         * colour: 00 black, 11 white, and 10 / 01 orange or blue (often
+         * called cyan; the exact hue depends on the TV).  Which of the two
+         * gets which depends on the VDG's clock phase after reset on a
+         * real machine; here it is selectable. */
+        uint32_t c10 = pal[m->cfg.artifact_phase ? C_ART_BLUE : C_ART_ORANGE];
+        uint32_t c01 = pal[m->cfg.artifact_phase ? C_ART_ORANGE : C_ART_BLUE];
+        for (int i = 0; i < bpr; i++) {
+            uint8_t b = m->mem[0x4000 + ((base + i) & m->vram_mask)];
+            for (int k = 0; k < 4; k++) {
+                uint32_t c;
+                switch ((b >> (6 - k * 2)) & 3) {
+                case 0:  c = pal[C_BLACK]; break;
+                case 1:  c = c01; break;
+                case 2:  c = c10; break;
+                default: c = pal[C_BUFF]; break;
+                }
+                px[x++] = c;
+                px[x++] = c;
+            }
+        }
+        return;
+    }
     for (int i = 0; i < bpr; i++) {
         uint8_t b = m->mem[0x4000 + ((base + i) & m->vram_mask)];
         for (int k = 0; k < ppb; k++) {

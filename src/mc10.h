@@ -35,7 +35,9 @@ enum {
 
 /* palette indices */
 enum { C_GREEN, C_YELLOW, C_BLUE, C_RED, C_BUFF, C_CYAN, C_MAGENTA, C_ORANGE,
-       C_BLACK, C_DKGREEN, C_DKORANGE, C_NUMCOLORS };
+       C_BLACK, C_DKGREEN, C_DKORANGE,
+       C_ART_BLUE, C_ART_ORANGE,        /* NTSC artifact colours (RG6, CSS=1) */
+       C_NUMCOLORS };
 
 /* RAM expansion in the cartridge slot */
 enum { EXP_NONE, EXP_16K, EXP_MCX128, EXP_MCX32SD };
@@ -141,6 +143,8 @@ typedef struct {
     char     tape_out_dir[1024];
     char     sd_root[1024];     /* MCX32-SD: host folder acting as the SD card */
     uint32_t palette[C_NUMCOLORS];
+    bool     no_artifact;       /* show RG6/CSS=1 as raw 256x192 (no NTSC artifact colours) */
+    int      artifact_phase;    /* 0: pair 10 = orange, 01 = blue; 1: swapped */
 } mc10_config;
 
 typedef struct mc10 {
@@ -212,6 +216,7 @@ typedef struct mc10 {
 } mc10;
 
 bool mc10_init(mc10 *m, const mc10_config *cfg);
+void mc10_default_palette(uint32_t pal[C_NUMCOLORS]);
 bool mc10_load_rom(mc10 *m, const char *path);
 bool mc10_load_chr(mc10 *m, const char *path);
 bool mc10_load_chrx(mc10 *m, const char *path);

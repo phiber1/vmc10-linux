@@ -35,8 +35,8 @@ A full run takes about two minutes and needs no display or audio device.
 
 ### Result on the reference system
 
-With all three ROM images present: **55 passed, 0 failed, 0 skipped**
-(Linux Mint 22.3, gcc 13, SDL 2.30).  With only `MC10.BIN`: 18 passed, 2
+With all three ROM images present: **58 passed, 0 failed, 0 skipped**
+(Linux Mint 22.3, gcc 13, SDL 2.30).  With only `MC10.BIN`: 21 passed, 2
 groups skipped.
 
 ## The headless harness
@@ -113,6 +113,9 @@ pixels.
 | internal 8K RAM mod (MEM) | `PRINT MEM` = 7238 with `--ram 4 --8k` |
 | RG6 repeats with stock 4K | A 6K RG6 test pattern: the bottom line is not the pattern's (the top repeats) |
 | RG6 full screen with 8K | The same pattern's bottom line is fully set: the VDG addresses 6K |
+| RG6/CSS=1 artifact colours, phase 0 | The pattern's band of `$AA` bytes (pixel pairs `10`) is solid artifact orange |
+| RG6/CSS=1 artifact colours, phase 1 | The same band is solid artifact blue |
+| RG6/CSS=1 without artifacting | With artifacting off, the band shows as alternating buff and black pixels |
 
 ### MCX-128 (needs `mcx128bas.rom`)
 
