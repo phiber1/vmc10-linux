@@ -10,3 +10,6 @@ roms/*
 /LPRINT.TXT
 /screenshots/
 *.C10.tmp
+# placeholders the Claude Code sandbox mounts over protected paths
+.claude/
+.mcp.json
