@@ -79,6 +79,12 @@ $H $ROM frames:100 "prn:$T/lp.txt" 'type:10 REM LISTED\nLLIST\nLPRINT "SUM";2+2\
 check "LLIST to the printer file" "$(cat "$T/lp.txt" 2>/dev/null)" "10 REM LISTED"
 check "LPRINT to the printer file" "$(cat "$T/lp.txt" 2>/dev/null)" "SUM 4"
 
+# Debug port: STAA $BE00 / NOP / STAA $BE00 / STAA $BE00 / BRA *
+# The second and third writes are 6 (NOP + STAA) and 4 (STAA) cycles apart.
+out=$($H $ROM frames:100 dbgport:BE00 poke:8E00,B7BE0001B7BE00B7BE0020FE pc:8E00 frames:1)
+check "debug port logs writes with cycle timing (NOP+STAA)" "$out" "dt=6 val=\$00"
+check "debug port logs writes with cycle timing (STAA)" "$out" "dt=4 val=\$00"
+
 out=$($H $ROM frames:100 'type:CLOADM\n' until-typed "tape:$T/TIMER.C10" until-tape frames:30 \
       'type:EXEC\n' until-typed frames:30 mem:4000,1 frames:60 mem:4000,1)
 a=$(printf '%s\n' "$out" | grep '^mem' | sed -n 1p); b=$(printf '%s\n' "$out" | grep '^mem' | sed -n 2p)

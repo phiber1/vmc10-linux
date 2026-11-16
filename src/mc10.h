@@ -147,6 +147,8 @@ typedef struct {
     int      artifact_phase;    /* 0: pair 10 = orange, 01 = blue; 1: swapped */
     bool     no_remap;          /* MCX32-SD: keep the $4200-$43FF variable mapping off
                                    (the frontend's default; --remap enables it) */
+    bool     debug_on;          /* log writes to debug_port (for timing code) */
+    uint16_t debug_port;
 } mc10_config;
 
 typedef struct mc10 {
@@ -193,6 +195,10 @@ typedef struct mc10 {
     tape_in  tin;
     tape_out tout;
     uint64_t last_port2_read;
+
+    /* debug port: writes to cfg.debug_port are logged with beam timing */
+    FILE    *debug_log;         /* NULL = stdout */
+    uint64_t debug_last;        /* cycle count of the previous debug write */
 
     /* printer */
     FILE    *printer;

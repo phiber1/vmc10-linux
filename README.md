@@ -48,8 +48,8 @@ make
 | MCX-128 | Boot menu, MicroColor BASIC / MCX BASIC / MCX BASIC (LARGE), PMODE 0-2 graphics, all four ROM map modes, both RAM banks |
 | MCX32-SD | MCX BASIC 3.1 from flash (BIOS, bank switching, `$4200` remap, writable SST39SF010 flash), and an SD card emulated as a host folder: DIR, `DIR=`, LOAD, SAVE, RUN, MERGE, LOADM, SAVEM, OPEN/PRINT#/INPUT#, KILL, RENAME, NEWDIR, AUTOEXEC, subdirectories, ASCII BASIC tokenized and detokenized on the fly |
 | Serial / Emcee | The MC-10's bit-banged 38400 baud RS-232 port, emulated bit by bit; built-in Emcee server (LOAD, SAVE, LOADM, SAVEM, OPEN, DIR, SETDIR, LLIST printing); or a TCP link to any external server, such as pyDriveWire |
-| Tools | Quicktype (type a text file), clipboard paste, drag-and-drop loading, screenshots, full screen, terminal debugger (step, breakpoints, disassembly, memory, binary load, CSAVEM) |
-| Quality | 61 automated regression tests (headless) with self-made fixtures: see [`docs/TESTING.md`](docs/TESTING.md) |
+| Tools | Quicktype (type a text file), clipboard paste, drag-and-drop loading, screenshots, full screen, terminal debugger (step, breakpoints, disassembly, memory, binary load, CSAVEM); a debug port that logs writes with beam timing, for timing your own code |
+| Quality | 63 automated regression tests (headless) with self-made fixtures: see [`docs/TESTING.md`](docs/TESTING.md) |
 
 ## Building
 
@@ -96,6 +96,7 @@ Drag and drop always works without them.
 | Arrows | W A S Z |
 | Alt-A | Swap the RG6 artifact colours (orange / blue) |
 | Alt-M | MCX32-SD: toggle the `$4200` BASIC-variable mapping (default off) |
+| Alt-D | Debug port on/off (for programmers: logs writes to `$BE00` with beam timing) |
 | Alt-Q | Quit |
 
 ### Common configurations

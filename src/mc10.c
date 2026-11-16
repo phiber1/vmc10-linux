@@ -86,9 +86,24 @@ static uint8_t bus_read(void *ctx, uint16_t a)
     return mc10_base_read(m, a);
 }
 
+/* Debug port: one log line per write.  line/y/cyc are the beam position at
+ * the start of the writing instruction (y = active display row, negative or
+ * >= 192 in the border/blanking); dt = cycles since the previous write. */
+static void debug_write(mc10 *m, uint8_t v)
+{
+    uint64_t now = m->cpu.cycles;
+    fprintf(m->debug_log ? m->debug_log : stdout,
+            "DBG frame=%llu line=%d y=%d cyc=%d total=%llu dt=%llu val=$%02X\n",
+            (unsigned long long)m->frame_count, m->line, m->line - FB_BORDER_Y, m->line_cycle,
+            (unsigned long long)now, (unsigned long long)(now - m->debug_last), v);
+    if (!m->debug_log) fflush(stdout);   /* keep piped logs complete if killed */
+    m->debug_last = now;
+}
+
 static void bus_write(void *ctx, uint16_t a, uint8_t v)
 {
     mc10 *m = ctx;
+    if (m->cfg.debug_on && a == m->cfg.debug_port) debug_write(m, v);
     if (m->cfg.expansion == EXP_MCX128) mcx128_write(m, a, v);
     else if (m->cfg.expansion == EXP_MCX32SD) mcx32sd_write(m, a, v);
     else mc10_base_write(m, a, v);
@@ -631,6 +646,7 @@ void mc10_shutdown(mc10 *m)
     if (m->tout.len) save_recording(m);
     if (m->cfg.expansion == EXP_MCX32SD) { mcx32sd_save_flash(m); sd_shutdown(m); }
     if (m->printer) fclose(m->printer);
+    if (m->debug_log) { fclose(m->debug_log); m->debug_log = NULL; }
     serial_shutdown(m);
     emcee_shutdown(m);
     tape_in_free(&m->tin);

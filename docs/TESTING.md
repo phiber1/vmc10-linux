@@ -35,7 +35,7 @@ A full run takes about two minutes and needs no display or audio device.
 
 ### Result on the reference system
 
-With all three ROM images present: **61 passed, 0 failed, 0 skipped**
+With all three ROM images present: **63 passed, 0 failed, 0 skipped**
 (Linux Mint 22.3, gcc 13, SDL 2.30).  With only `MC10.BIN`: 21 passed, 2
 groups skipped.
 
@@ -65,6 +65,9 @@ build/headless ROM [ram:4|20] [mcx128:FILE] [mcx32sd:FILE] [slowtype] [8k] [sd:D
 | `mem:ADDR,N` | Hex dump through the CPU bus (with the current bank mapping) |
 | `sum:ADDR,LEN` | Checksum of memory, for comparing two load paths |
 | `poke:ADDR,HEX...` | Write bytes |
+| `load:FILE,ADDR` | Load a raw binary into memory at ADDR |
+| `pc:ADDR` | Jump: set the program counter (start a loaded program) |
+| `dbgport:ADDR` | Log every write to ADDR with its beam timing (see `--debug-port` in the user guide) |
 | `csavem:FILE,NAME,START,END,EXEC` | Save memory as a machine-code `.C10` |
 | `c10wav:IN,OUT` | Convert a cassette image to WAV |
 | `flash:OFFSET,N` | Dump MCX32-SD flash bytes |
@@ -103,6 +106,7 @@ pixels.
 | CSAVE -> CLOAD -> RUN | The full round trip runs |
 | C10 -> WAV and CLOAD from WAV | WAV writer and WAV reader (DC correction, hysteresis), read by the real ROM routine |
 | LLIST / LPRINT to the printer file | The 600-baud printer decoder |
+| debug port timing (two tests) | Writes to the watched address are logged with exact cycle gaps: 6 cycles for NOP + STAA, 4 for STAA |
 | CLOADM + EXEC, timer interrupt | Machine-code tape loading; EXEC; **the 6803 output-compare interrupt**, vectored through BASIC's `$4206` hook, firing repeatedly (the screen byte keeps changing) |
 | SOUND 100,5 pitch | Zero crossings in the emulated audio give 258 Hz (250-266 accepted), matching the ROM's loop timing: verifies the CPU cycle table and the speaker sampling |
 

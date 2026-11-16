@@ -170,6 +170,16 @@ int main(int argc, char **argv)
         else if (!strncmp(a, "artifact:", 9)) M.cfg.no_artifact = !atoi(a + 9);
         else if (!strncmp(a, "artphase:", 9)) M.cfg.artifact_phase = atoi(a + 9) ? 1 : 0;
         else if (!strncmp(a, "remap:", 6)) M.cfg.no_remap = !atoi(a + 6);
+        else if (!strncmp(a, "dbgport:", 8)) {    /* dbgport:ADDR - log writes to ADDR */
+            M.cfg.debug_on = true;
+            M.cfg.debug_port = (uint16_t)strtoul(a + 8, NULL, 16);
+        }
+        else if (!strncmp(a, "load:", 5)) {       /* load:FILE,ADDR - raw binary into memory */
+            char file[1024]; unsigned ad = 0;
+            if (sscanf(a + 5, "%1023[^,],%x", file, &ad) == 2 && !mc10_load_binary(&M, file, (uint16_t)ad))
+                printf("load: cannot read %s\n", file);
+        }
+        else if (!strncmp(a, "pc:", 3)) M.cpu.pc = (uint16_t)strtoul(a + 3, NULL, 16);  /* jump */
         else if (!strncmp(a, "poke:", 5)) {       /* poke:ADDR,HEXBYTES */
             unsigned ad = 0; char hex[2048] = "";
             sscanf(a + 5, "%x,%2047s", &ad, hex);

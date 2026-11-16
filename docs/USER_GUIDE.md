@@ -94,6 +94,7 @@ A file named on the command line is loaded according to its type:
 | `--remap` / `--no-remap` | MCX32-SD: enable / disable the board's `$4200-$43FF` mapping of BASIC's old variable addresses (default: disabled, Alt-M toggles; see section 15) |
 | `--emcee [DIR]` | Built-in Emcee file server on the serial port.  DIR defaults to the SD folder, or `~/emcee`.  It is only taken as the folder if it exists. |
 | `--serial HOST:PORT` | Connect the serial port to an external TCP server instead (e.g. pyDriveWire) |
+| `--debug-port ADDR[,FILE]` | For programmers: log every write to address ADDR (hex) to the terminal or FILE, with the frame number, beam line, active-display row `y`, cycle within the line, total cycles, cycles since the previous write (`dt`) and the value.  The write still reaches the bus.  `BE00` is unmapped in every configuration, so `STAA $BE00` makes a free timing marker.  Off by default; **Alt-D** toggles it at run time (at the configured address, default `BE00`), and the `debug`, `debug_port` and `debug_log` settings set it up permanently |
 | `--scale N` | Window scale 1-6 (default 3, i.e. 960x720) |
 | `--fullscreen` | Start full screen |
 | `--tape FILE` | Insert a cassette image |
@@ -143,12 +144,15 @@ override it.
 | `artifact` | `0` / `1` | NTSC artifact colours in RG6/CSS=1 (default 1) |
 | `artifact_phase` | `0` / `1` | Artifact colour phase (saved when changed with Alt-A) |
 | `remap` | `0` / `1` | MCX32-SD `$4200` variable mapping (default 0; saved when changed with Alt-M) |
+| `debug` | `0` / `1` | Debug port on at start (default 0; saved when changed with Alt-D) |
+| `debug_port` | hex address | Address the debug port watches (default `BE00`) |
+| `debug_log` | path | Debug port log file (default: the terminal) |
 | `lowercase_inverse` | `0` / `1` | Quicktype keeps lower case (shown as inverse video) instead of upper-casing it |
 | `color.NAME` | `R,G,B` or `#RRGGBB` | Palette.  NAME is one of `green yellow blue red buff cyan magenta orange black darkgreen darkorange artifactblue artifactorange`.  Each line overrides one colour. |
 
 **Only settings changed with hotkeys are saved back** (window size with
 F10, sound with F6, keyboard mode with F5, artifact phase with Alt-A, MCX32-SD
-mapping with Alt-M).  Command-line options are never
+mapping with Alt-M, debug port with Alt-D).  Command-line options are never
 written to the file, and other lines in it are preserved.
 
 The default palette is the one from the original VMC10:

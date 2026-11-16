@@ -24,6 +24,7 @@
 typedef struct {
     char rom[PATH_MAX], chr[PATH_MAX], chrx[PATH_MAX], mcxrom[PATH_MAX];
     char mcx32flash[PATH_MAX], sddir[PATH_MAX], serial[256], emcee[PATH_MAX];
+    char debug_log[PATH_MAX];  /* debug port log file (empty = stdout) */
     bool emcee_on;
     int  scale;
     bool fullscreen;
@@ -42,7 +43,7 @@ static bool warp, show_help, running = true;
 static uint32_t osd_until;
 static char exe_dir[PATH_MAX];
 static SDL_GameController *pad;
-static bool dirty[6];           /* settings changed via hotkeys: scale, volume, sound, keyboard, artifact_phase, remap */
+static bool dirty[7];           /* settings changed via hotkeys: scale, volume, sound, keyboard, artifact_phase, remap, debug */
 
 static void trim(char *s)
 {
@@ -98,6 +99,9 @@ static void apply_setting(mc10_config *cfg, const char *k, const char *v)
     else if (!strcmp(k, "artifact")) cfg->no_artifact = !atoi(v);
     else if (!strcmp(k, "artifact_phase")) cfg->artifact_phase = atoi(v) ? 1 : 0;
     else if (!strcmp(k, "remap")) cfg->no_remap = !atoi(v);
+    else if (!strcmp(k, "debug")) cfg->debug_on = atoi(v);
+    else if (!strcmp(k, "debug_port")) cfg->debug_port = (uint16_t)strtoul(v, NULL, 16);
+    else if (!strcmp(k, "debug_log")) snprintf(S.debug_log, sizeof S.debug_log, "%s", v);
     else if (!strcmp(k, "lowercase_inverse")) cfg->lower_as_inverse = atoi(v);
     else if (!strncmp(k, "color.", 6)) {
         for (int i = 0; i < C_NUMCOLORS; i++)
@@ -122,27 +126,40 @@ static void load_config(mc10_config *cfg)
     fclose(f);
 }
 
+/* Open the debug port log file (if one is configured) the first time the
+ * port is enabled; without one, the log goes to stdout. */
+static void debug_open(void)
+{
+    if (M.debug_log || !S.debug_log[0]) return;
+    if (!(M.debug_log = fopen(S.debug_log, "w")))
+        fprintf(stderr, "vmc10: cannot write debug log %s (using stdout)\n", S.debug_log);
+    else
+        setvbuf(M.debug_log, NULL, _IOLBF, 0);
+}
+
 /* Persist settings the user toggles from the keyboard. */
 static void save_config(void)
 {
-    const char *keys[] = { "scale", "volume", "sound", "keyboard", "artifact_phase", "remap" };
-    char vals[6][32];
+    const char *keys[] = { "scale", "volume", "sound", "keyboard", "artifact_phase", "remap", "debug" };
+    enum { NKEYS = 7 };
+    char vals[NKEYS][32];
     snprintf(vals[0], 32, "%d", S.scale);
     snprintf(vals[1], 32, "%d", M.cfg.volume);
     snprintf(vals[2], 32, "%d", M.cfg.sound);
     snprintf(vals[3], 32, "%s", S.sensible ? "sensible" : "emulated");
     snprintf(vals[4], 32, "%d", M.cfg.artifact_phase);
     snprintf(vals[5], 32, "%d", !M.cfg.no_remap);
+    snprintf(vals[6], 32, "%d", M.cfg.debug_on);
 
     char *out = NULL;
     size_t outlen = 0;
     FILE *mem = open_memstream(&out, &outlen);
     if (!mem) return;
     bool any = false;
-    for (int i = 0; i < 6; i++) any |= dirty[i];
+    for (int i = 0; i < NKEYS; i++) any |= dirty[i];
     if (!any) { fclose(mem); free(out); return; }
-    bool done[6] = { 0 };
-    for (int i = 0; i < 6; i++) done[i] = !dirty[i];
+    bool done[NKEYS] = { 0 };
+    for (int i = 0; i < NKEYS; i++) done[i] = !dirty[i];
     FILE *f = fopen(S.config_path, "r");
     if (f) {
         char line[PATH_MAX + 64];
@@ -150,7 +167,7 @@ static void save_config(void)
             char key[64] = "";
             sscanf(line, " %63[^= \t]", key);
             int hit = -1;
-            for (int i = 0; i < 6; i++) if (!strcmp(key, keys[i]) && strchr(line, '=')) hit = i;
+            for (int i = 0; i < NKEYS; i++) if (!strcmp(key, keys[i]) && strchr(line, '=')) hit = i;
             if (hit >= 0 && dirty[hit]) { fprintf(mem, "%s = %s\n", keys[hit], vals[hit]); done[hit] = true; }
             else fputs(line, mem);
         }
@@ -158,7 +175,7 @@ static void save_config(void)
     } else {
         fputs("# VMC10 for Linux settings.  See README.md for all keys.\n", mem);
     }
-    for (int i = 0; i < 6; i++) if (!done[i]) fprintf(mem, "%s = %s\n", keys[i], vals[i]);
+    for (int i = 0; i < NKEYS; i++) if (!done[i]) fprintf(mem, "%s = %s\n", keys[i], vals[i]);
     fclose(mem);
 
     char dir[PATH_MAX];
@@ -242,7 +259,7 @@ static const char *help_lines[] = {
     "F11 SCREENSHOT   F12 FULL SCREEN",
     "ESC BREAK   CTRL CONTROL",
     "ALT-A SWAP ARTIFACT COLOURS",
-    "ALT-M MCX32-SD $4200 MAPPING",
+    "ALT-M $4200 MAP  ALT-D DEBUG PORT",
     "ARROWS = W A S Z (GAMES)",
     "DROP FILES ON WINDOW TO LOAD",
     NULL
@@ -533,6 +550,15 @@ static void handle_events(void)
                 }
                 break;
             }
+            if (k == SDLK_d && (e.key.keysym.mod & KMOD_ALT)) {
+                if (down && !e.key.repeat) {
+                    M.cfg.debug_on = !M.cfg.debug_on;
+                    dirty[6] = true;
+                    if (M.cfg.debug_on) debug_open();
+                    mc10_status(&M, "DEBUG PORT $%04X %s", M.cfg.debug_port, M.cfg.debug_on ? "ON" : "OFF");
+                }
+                break;
+            }
             if (k == SDLK_a && (e.key.keysym.mod & KMOD_ALT)) {
                 if (down && !e.key.repeat) {
                     M.cfg.artifact_phase ^= 1;
@@ -630,6 +656,9 @@ static void usage(const char *prog)
            "  --remap            MCX32-SD: enable the board's $4200-$43FF mapping of BASIC's\n"
            "                     old variable addresses, for old programs that POKE them.\n"
            "                     Default off: PEEK/POKE reach the graphics screen (Alt-M)\n"
+           "  --debug-port A[,F] for programmers: log every write to address A (hex; BE00\n"
+           "                     is unmapped) with frame, beam line and cycle counts, to\n"
+           "                     stdout or file F.  Alt-D toggles it (default address BE00)\n"
            "  --emcee [DIR]      built-in Emcee file server for MCX BASIC on the serial\n"
            "                     port (default folder: the SD card folder, or ~/emcee)\n"
            "  --serial HOST:PORT connect the RS-232 port to an external TCP server instead,\n"
@@ -659,7 +688,8 @@ int main(int argc, char **argv)
     if (n > 0) { exe_dir[n] = 0; char *s = strrchr(exe_dir, '/'); if (s) *s = 0; }
     else snprintf(exe_dir, sizeof exe_dir, ".");
 
-    mc10_config cfg = { .expansion = EXP_16K, .volume = 50, .sound = true, .fast_typing = true };
+    mc10_config cfg = { .expansion = EXP_16K, .volume = 50, .sound = true, .fast_typing = true,
+                        .debug_port = 0xBE00 };
     mc10_default_palette(cfg.palette);      /* the settings file overrides single colours */
     cfg.no_remap = true;                    /* MCX32-SD $4200 mapping off unless --remap */
     snprintf(cfg.printer_path, sizeof cfg.printer_path, "LPRINT.TXT");
@@ -716,6 +746,12 @@ int main(int argc, char **argv)
         else if (ARG("--artifact-phase")) cfg.artifact_phase = atoi(v) ? 1 : 0;
         else if (!strcmp(a, "--no-remap")) cfg.no_remap = true;
         else if (!strcmp(a, "--remap")) cfg.no_remap = false;
+        else if (ARG("--debug-port")) {
+            char *end;
+            cfg.debug_on = true;
+            cfg.debug_port = (uint16_t)strtoul(v, &end, 16);
+            if (*end == ',') snprintf(S.debug_log, sizeof S.debug_log, "%s", end + 1);
+        }
         else if (!strcmp(a, "--4k")) cfg.internal8k = false;
         else if (!strcmp(a, "--fullscreen")) S.fullscreen = true;
         else if (!strcmp(a, "--sensible")) S.sensible = true;
@@ -734,6 +770,7 @@ int main(int argc, char **argv)
     if (cfg.volume > 100) cfg.volume = 100;
 
     mc10_init(&M, &cfg);
+    if (M.cfg.debug_on) debug_open();
 
     char path[PATH_MAX];
     const char *rom = S.rom[0] ? S.rom : NULL;
