@@ -13,3 +13,14 @@ roms/*
 # placeholders the Claude Code sandbox mounts over protected paths
 .claude/
 .mcp.json
+# placeholders the Claude Code sandbox mounts over protected paths
+.bash_profile
+.bashrc
+.gitconfig
+.gitmodules
+.idea
+.profile
+.ripgreprc
+.vscode
+.zprofile
+.zshrc
