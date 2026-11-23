@@ -51,6 +51,7 @@ build/headless ROM [ram:4|20] [mcx128:FILE] [mcx32sd:FILE] [slowtype] [8k] [sd:D
 | Command | Action |
 |---|---|
 | `frames:N` | Run N video frames (N/59.92 seconds of emulated time) |
+| `break:N` | Run N frames with the BREAK key held down (for programs that read it from the keyboard matrix) |
 | `type:TEXT` | Queue text for typing (`\n` = ENTER) |
 | `typefile:FILE` | Queue a file for typing (Quicktype) |
 | `until-typed` | Run until the typing queue is empty |

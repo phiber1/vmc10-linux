@@ -3,6 +3,7 @@
  *
  * usage: headless ROM [commands...]
  *   frames:N        run N frames
+ *   break:N         run N frames with the BREAK key held
  *   type:TEXT       queue text for typing (\n = ENTER)
  *   tape:FILE       insert cassette image
  *   until-tape      run until tape is finished (max 3000 frames)
@@ -92,6 +93,11 @@ int main(int argc, char **argv)
     for (int i = ai; i < argc; i++) {
         char *a = argv[i];
         if (!strncmp(a, "frames:", 7)) run(atoi(a + 7));
+        else if (!strncmp(a, "break:", 6)) {      /* break:N - hold BREAK for N frames */
+            M.keys[K_BREAK % 8] |= (uint8_t)(1 << (K_BREAK / 8));
+            run(atoi(a + 6));
+            M.keys[K_BREAK % 8] &= (uint8_t)~(1 << (K_BREAK / 8));
+        }
         else if (!strncmp(a, "type:", 5)) {
             char buf[4096]; size_t k = 0;
             for (char *p = a + 5; *p && k < sizeof buf - 1; p++) {
